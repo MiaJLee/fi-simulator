@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경제적 자유 시뮬레이터</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a2035;
+    --bg-card-hover: #1e2642;
+    --border: #2a3352;
+    --border-focus: #4f7cff;
+    --text-primary: #e8ecf4;
+    --text-secondary: #8899bb;
+    --text-muted: #5a6a8a;
+    --accent: #4f7cff;
+    --accent-glow: rgba(79, 124, 255, 0.15);
+    --success: #34d399;
+    --success-bg: rgba(52, 211, 153, 0.1);
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.1);
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.1);
+    --gold: #f0c060;
+    --gold-glow: rgba(240, 192, 96, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(79,124,255,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(240,192,96,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 32px;
+    text-align: center;
+  }
+
+  header .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: var(--gold-glow);
+    border: 1px solid rgba(240,192,96,0.2);
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+  }
+
+  header h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  header p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 28px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    padding-left: 2px;
+  }
+
+  .section-title .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 11px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  .section-title .icon.blue { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,124,255,0.2); }
+  .section-title .icon.gold { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(240,192,96,0.2); }
+  .section-title .icon.green { background: var(--success-bg); color: var(--success); border: 1px solid rgba(52,211,153,0.2); }
+
+  /* Cards & Grid */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: rgba(79,124,255,0.2); }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    padding: 11px 14px;
+    padding-right: 44px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-wrap input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .input-wrap .unit {
+    position: absolute;
+    right: 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 13px 32px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #4f7cff, #3b5fcc);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(79,124,255,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(79,124,255,0.4);
+  }
+
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+
+  /* Results Panel */
+  .results-panel {
+    display: none;
+    animation: fadeUp 0.5s ease;
+  }
+
+  .results-panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+
+  .stat-card.accent::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-card.gold::before { background: linear-gradient(90deg, var(--gold), transparent); }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--success), transparent); }
+  .stat-card.warn::before { background: linear-gradient(90deg, var(--warning), transparent); }
+
+  .stat-card .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-card .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .stat-card .stat-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Chart area */
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-secondary);
+  }
+
+  canvas { width: 100% !important; height: 320px !important; }
+
+  /* Table */
+  .table-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .table-header {
+    padding: 18px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .table-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead { position: sticky; top: 0; z-index: 2; }
+
+  thead th {
+    padding: 12px 16px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th:first-child { text-align: center; }
+
+  tbody td {
+    padding: 11px 16px;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(42,51,82,0.4);
+  }
+
+  tbody td:first-child {
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  tbody tr:hover td {
+    background: rgba(79,124,255,0.04);
+    color: var(--text-primary);
+  }
+
+  tbody tr.target-row td {
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 48px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--success);
+    color: var(--success);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    header h1 { font-size: 26px; }
+    .input-grid { grid-template-columns: 1fr 1fr; }
+    .result-summary { grid-template-columns: 1fr 1fr; }
+    .card { padding: 18px; }
+    .stat-card .stat-value { font-size: 18px; }
+  }
+
+  @media (max-width: 420px) {
+    .input-grid { grid-template-columns: 1fr; }
+    .result-summary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="tag">Financial Independence Simulator</div>
+    <h1>경제적 자유 시뮬레이터</h1>
+    <p>자산 성장을 시뮬레이션하고 경제적 자유까지 걸리는 시간을 계산합니다</p>
+  </header>
+
+  <!-- 현재 자산 & 수익률 -->
+  <div class="section">
+    <div class="section-title"><span class="icon blue">₩</span>자산 및 수익률</div>
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-group">
+          <label>현재 자산</label>
+          <div class="input-wrap">
+            <input type="text" id="currentAssets" placeholder="100,000,000" inputmode="numeric">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>연간 수익률 (기대 수익률)</label>
+          <div class="input-wrap">
+            <input type="text" id="returnRate" placeholder="7" inputmode="decimal">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>연간 물가상승률</label>
+          <div class="input-wrap">
+            <input type="text" id="inflationRate" placeholder="3" inputmode="decimal">
+            <span class="unit">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 소득 & 지출 -->
+  <div class="section">
+    <div class="section-title"><span class="icon gold">↕</span>소득 및 지출</div>
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-group">
+          <label>월 소득 (세후)</label>
+          <div class="input-wrap">
+            <input type="text" id="monthlyIncome" placeholder="500" inputmode="numeric">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>월 생활비 지출</label>
+          <div class="input-wrap">
+            <input type="text" id="monthlyExpense" placeholder="250" inputmode="numeric">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>연간 소득 증가율</label>
+          <div class="input-wrap">
+            <input type="text" id="incomeGrowth" placeholder="3" inputmode="decimal">
+            <span class="unit">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 목표 설정 -->
+  <div class="section">
+    <div class="section-title"><span class="icon green">◎</span>목표 설정</div>
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-group">
+          <label>목표 자산</label>
+          <div class="input-wrap">
+            <input type="text" id="targetAssets" placeholder="100,000" inputmode="numeric">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>경제적 자유 후 월 생활비</label>
+          <div class="input-wrap">
+            <input type="text" id="fiExpense" placeholder="300" inputmode="numeric">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>시뮬레이션 기간 (최대)</label>
+          <div class="input-wrap">
+            <input type="text" id="simYears" placeholder="40" inputmode="numeric">
+            <span class="unit">년</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runSimulation()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        시뮬레이션 실행
+      </button>
+      <button class="btn btn-secondary" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="section">
+      <div class="section-title"><span class="icon blue">◆</span>시뮬레이션 결과</div>
+      <div class="result-summary" id="resultSummary"></div>
+    </div>
+
+    <div class="chart-card">
+      <h3>자산 성장 추이</h3>
+      <canvas id="assetChart"></canvas>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>연도별 상세 내역</span>
+        <span id="tableInfo" style="font-size:12px; font-weight:400;"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>연차</th>
+              <th>시작 자산</th>
+              <th>연 저축</th>
+              <th>투자 수익</th>
+              <th>총 자산</th>
+              <th>실질 가치</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    이 시뮬레이터는 참고용이며, 실제 투자 결과는 다를 수 있습니다.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── localStorage 연동 ──
+const STORAGE_KEY = 'fi_simulator_data';
+const INPUT_IDS = [
+  'currentAssets','returnRate','inflationRate',
+  'monthlyIncome','monthlyExpense','incomeGrowth',
+  'targetAssets','fiExpense','simYears'
+];
+
+function saveToStorage() {
+  const data = {};
+  INPUT_IDS.forEach(id => data[id] = document.getElementById(id).value);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    INPUT_IDS.forEach(id => {
+      if (data[id] !== undefined && data[id] !== '') {
+        document.getElementById(id).value = data[id];
+      }
+    });
+    showToast('이전 데이터를 불러왔습니다');
+  } catch(e) {}
+}
+
+// Auto‑save on input change
+INPUT_IDS.forEach(id => {
+  document.getElementById(id).addEventListener('input', saveToStorage);
+});
+
+// ── 숫자 포맷 ──
+function fmt(n) {
+  if (Math.abs(n) >= 10000) return (n/10000).toFixed(1).replace(/\.0$/, '') + '억';
+  return n.toLocaleString('ko-KR');
+}
+
+function fmtFull(n) {
+  return Math.round(n).toLocaleString('ko-KR');
+}
+
+function parseNum(id) {
+  return parseFloat(document.getElementById(id).value.replace(/,/g,'')) || 0;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── 시뮬레이션 ──
+function runSimulation() {
+  const currentAssets = parseNum('currentAssets');
+  const returnRate = parseNum('returnRate') / 100;
+  const inflation = parseNum('inflationRate') / 100;
+  const monthlyIncome = parseNum('monthlyIncome');
+  const monthlyExpense = parseNum('monthlyExpense');
+  const incomeGrowth = parseNum('incomeGrowth') / 100;
+  const targetAssets = parseNum('targetAssets');
+  const fiExpense = parseNum('fiExpense');
+  const simYears = parseNum('simYears') || 40;
+
+  if (currentAssets <= 0 && monthlyIncome <= 0) {
+    showToast('현재 자산 또는 월 소득을 입력해 주세요');
+    return;
+  }
+
+  const realReturn = (1 + returnRate) / (1 + inflation) - 1;
+  const monthlySavings = monthlyIncome - monthlyExpense;
+  const annualSavings = monthlySavings * 12;
+  const savingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome * 100) : 0;
+
+  // Year-by-year simulation
+  const years = [];
+  let assets = currentAssets;
+  let targetYear = -1;
+  let incMultiplier = 1;
+
+  for (let y = 1; y <= simYears; y++) {
+    const startAssets = assets;
+    const yearIncome = monthlyIncome * 12 * incMultiplier;
+    const yearExpense = monthlyExpense * 12 * Math.pow(1 + inflation, y - 1);
+    const yearSavings = Math.max(yearIncome - yearExpense, 0);
+    const investReturn = startAssets * returnRate;
+    assets = startAssets + yearSavings + investReturn;
+    const realValue = assets / Math.pow(1 + inflation, y);
+
+    years.push({
+      year: y,
+      start: startAssets,
+      savings: yearSavings,
+      investReturn,
+      total: assets,
+      realValue
+    });
+
+    if (targetYear < 0 && assets >= targetAssets) {
+      targetYear = y;
+    }
+
+    incMultiplier *= (1 + incomeGrowth);
+  }
+
+  // FI expense sustainability
+  const fiAnnualExpense = fiExpense * 12;
+  const safeWithdrawalRate = targetAssets > 0 ? (fiAnnualExpense / targetAssets * 100) : 0;
+  const requiredForFI = fiAnnualExpense > 0 ? Math.ceil(fiAnnualExpense / (realReturn > 0 ? realReturn : 0.04)) : 0;
+
+  // ── Render summary cards ──
+  const panel = document.getElementById('resultsPanel');
+  panel.classList.add('active');
+
+  const summaryHTML = `
+    <div class="stat-card accent">
+      <div class="stat-label">월 저축액</div>
+      <div class="stat-value">${fmt(monthlySavings)} 만원</div>
+      <div class="stat-sub">저축률 ${savingsRate.toFixed(1)}%</div>
+    </div>
+    <div class="stat-card ${targetYear > 0 ? 'green' : 'warn'}">
+      <div class="stat-label">목표 달성 시점</div>
+      <div class="stat-value">${targetYear > 0 ? targetYear + '년 후' : simYears + '년 내 미달성'}</div>
+      <div class="stat-sub">${targetYear > 0 ? '목표 자산 ' + fmt(targetAssets) + ' 만원' : '목표: ' + fmt(targetAssets) + ' 만원'}</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">${simYears}년 후 총 자산</div>
+      <div class="stat-value">${fmt(Math.round(years[years.length-1].total))} 만원</div>
+      <div class="stat-sub">실질 가치 ${fmt(Math.round(years[years.length-1].realValue))} 만원</div>
+    </div>
+    <div class="stat-card ${safeWithdrawalRate <= 4 ? 'green' : 'warn'}">
+      <div class="stat-label">인출률 (목표 자산 기준)</div>
+      <div class="stat-value">${safeWithdrawalRate.toFixed(1)}%</div>
+      <div class="stat-sub">${safeWithdrawalRate <= 4 ? '안전 범위 (≤4%)' : '⚠ 4% 초과 — 자산 고갈 위험'}</div>
+    </div>
+  `;
+  document.getElementById('resultSummary').innerHTML = summaryHTML;
+
+  // ── Render table ──
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = years.map(r => `
+    <tr class="${r.year === targetYear ? 'target-row' : ''}">
+      <td>${r.year}</td>
+      <td>${fmtFull(r.start)}</td>
+      <td>${fmtFull(r.savings)}</td>
+      <td>${fmtFull(r.investReturn)}</td>
+      <td>${fmtFull(r.total)}</td>
+      <td>${fmtFull(r.realValue)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('tableInfo').textContent = `단위: 만원`;
+
+  // ── Render chart (Canvas) ──
+  drawChart(years, targetYear, targetAssets);
+
+  // Save
+  saveToStorage();
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Canvas chart ──
+function drawChart(years, targetYear, targetAssets) {
+  const canvas = document.getElementById('assetChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width - 56;
+  const H = 320;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 20, right: 20, bottom: 40, left: 70 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+
+  const maxVal = Math.max(...years.map(y => y.total), targetAssets) * 1.1;
+  const xStep = cw / (years.length - 1 || 1);
+
+  function x(i) { return pad.left + i * xStep; }
+  function y(v) { return pad.top + ch - (v / maxVal) * ch; }
+
+  // Grid
+  ctx.strokeStyle = 'rgba(42,51,82,0.5)';
+  ctx.lineWidth = 0.5;
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const gy = pad.top + (ch / gridLines) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+    const val = maxVal - (maxVal / gridLines) * i;
+    ctx.fillStyle = '#5a6a8a';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(Math.round(val)), pad.left - 10, gy + 4);
+  }
+
+  // X axis labels
+  ctx.fillStyle = '#5a6a8a';
+  ctx.textAlign = 'center';
+  const labelStep = Math.max(1, Math.ceil(years.length / 10));
+  years.forEach((yr, i) => {
+    if (i % labelStep === 0 || i === years.length - 1) {
+      ctx.fillText(yr.year + '년', x(i), H - pad.bottom + 20);
+    }
+  });
+
+  // Target line
+  if (targetAssets > 0 && targetAssets < maxVal) {
+    ctx.strokeStyle = 'rgba(52,211,153,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y(targetAssets));
+    ctx.lineTo(W - pad.right, y(targetAssets));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#34d399';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'left';
+    ctx.fillText('목표 ' + fmt(targetAssets), W - pad.right - 80, y(targetAssets) - 6);
+  }
+
+  // Real value area
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(years[0].realValue));
+  years.forEach((yr, i) => ctx.lineTo(x(i), y(yr.realValue)));
+  ctx.lineTo(x(years.length - 1), y(0));
+  ctx.lineTo(x(0), y(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(240,192,96,0.08)';
+  ctx.fill();
+
+  // Real value line
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(years[0].realValue));
+  years.forEach((yr, i) => ctx.lineTo(x(i), y(yr.realValue)));
+  ctx.strokeStyle = 'rgba(240,192,96,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Total asset area
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(years[0].total));
+  years.forEach((yr, i) => ctx.lineTo(x(i), y(yr.total)));
+  ctx.lineTo(x(years.length - 1), y(0));
+  ctx.lineTo(x(0), y(0));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  grad.addColorStop(0, 'rgba(79,124,255,0.15)');
+  grad.addColorStop(1, 'rgba(79,124,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Total asset line
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(years[0].total));
+  years.forEach((yr, i) => ctx.lineTo(x(i), y(yr.total)));
+  ctx.strokeStyle = '#4f7cff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Target year dot
+  if (targetYear > 0) {
+    const ti = targetYear - 1;
+    ctx.beginPath();
+    ctx.arc(x(ti), y(years[ti].total), 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#34d399';
+    ctx.fill();
+    ctx.strokeStyle = '#0a0e1a';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Legend
+  ctx.font = '11px Noto Sans KR';
+  ctx.textAlign = 'left';
+  const ly = H - 8;
+  ctx.fillStyle = '#4f7cff';
+  ctx.fillRect(pad.left, ly - 6, 14, 3);
+  ctx.fillStyle = '#8899bb';
+  ctx.fillText('명목 자산', pad.left + 20, ly);
+  ctx.fillStyle = '#f0c060';
+  ctx.fillRect(pad.left + 90, ly - 6, 14, 3);
+  ctx.fillStyle = '#8899bb';
+  ctx.fillText('실질 가치', pad.left + 110, ly);
+}
+
+// ── Reset ──
+function resetAll() {
+  INPUT_IDS.forEach(id => document.getElementById(id).value = '');
+  document.getElementById('resultsPanel').classList.remove('active');
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  showToast('초기화 완료');
+}
+
+// ── Init ──
+window.addEventListener('DOMContentLoaded', loadFromStorage);
+window.addEventListener('resize', () => {
+  if (document.getElementById('resultsPanel').classList.contains('active')) {
+    document.querySelector('.btn-primary').click();
+  }
+});
+</script>
+</body>
+</html>

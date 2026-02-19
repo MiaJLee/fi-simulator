@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-primary: #f4f4f0;
+  --color-bg-secondary: #e8e8e3;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #f9f9f6;
+  --color-border-default: rgba(12, 12, 9, 0.1);
+  --color-border-focus: #4a8fa6;
+  --color-text-primary: #0c0c09;
+  --color-text-secondary: #5b5b4b;
+  --color-text-muted: #7c7c67;
+  --color-accent: #4a8fa6;
+  --color-accent-glow: rgba(74, 143, 166, 0.12);
+  --color-success: #4d7a42;
+  --color-success-bg: rgba(77, 122, 66, 0.1);
+  --color-warning: #b8860b;
+  --color-warning-bg: rgba(184, 134, 11, 0.08);
+  --color-danger: #a65d50;
+  --color-danger-bg: rgba(166, 93, 80, 0.08);
+  --color-gold: #a67040;
+  --color-gold-glow: rgba(166, 112, 64, 0.12);
+
+  --font-sans: var(--font-noto-sans-kr), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+
+html {
+  width: 100%;
+  scrollbar-gutter: stable;
+}
+
+body {
+  width: 100%;
+  min-width: 0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Ambient background - viewport-fixed so it never shifts layout */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(74,143,166,0.04) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(166,112,64,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fade up animation */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease;
+}
+
+/* Main content wrapper - always centered */
+.main-content {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Custom scrollbar */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d8d0 transparent;
+}
